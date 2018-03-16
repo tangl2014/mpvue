@@ -2,10 +2,11 @@ const { compile, compileToWxml } = require('../../../packages/mpvue-template-com
 // const { strToRegExp } = require('../helpers/index')
 
 function assertCodegen (template, assertTemplate, options, parmas = {}) {
-  const { errors = [], mpErrors = [], slots = {}} = parmas
+  const { errors = [], mpErrors = [], slots = {}, mpTips = [] } = parmas
   const compiled = compile(template, {})
   const output = compileToWxml(compiled, options)
   expect(output.compiled.mpErrors).toEqual(mpErrors)
+  expect(output.compiled.mpTips).toEqual(mpTips)
   expect(output.compiled.errors).toEqual(errors)
   // console.log(JSON.stringify(output.slots))
   expect(JSON.stringify(output.slots)).toEqual(JSON.stringify(slots))
@@ -114,12 +115,12 @@ describe('指令', () => {
   it('v-bind:class', () => {
     assertCodegen(
       `<div v-bind:class="{ active: isActive }"></div>`,
-      `<template name="a"><view class="_div {{( isActive )? 'active' : ' '}}"></view></template>`,
+      `<template name="a"><view class="_div {{[isActive ? 'active' : '']}}"></view></template>`,
       { name: 'a' }
     )
     assertCodegen(
       `<div class="static"  v-bind:class="{ active: isActive, 'textDanger': hasError }"></div>`,
-      `<template name="a"><view class="_div static {{( isActive)? 'active' : ' '}} {{( hasError )? 'text-danger' : ' '}}"></view></template>`,
+      `<template name="a"><view class="_div static {{[isActive ? 'active' : '', hasError ? 'textDanger' : '']}}"></view></template>`,
       { name: 'a' }
     )
     assertCodegen(
@@ -137,6 +138,97 @@ describe('指令', () => {
       },
       {
         mpTips: ['template 不支持此属性-> class="baz boo"'],
+        mpErrors: []
+      }
+    )
+
+    // object
+    assertCodegen(
+      `<div><p :class="{ active: isActive }">233</p></div>`,
+      `<template name="a"><view class="_div"><view class="_p {{[isActive ? 'active' : '']}}">233</view></view></template>`,
+      { name: 'a' }
+    )
+    assertCodegen(
+      `<div><p class="static" v-bind:class="{ active: isActive, 'text-danger': hasError }">233</p></div>`,
+      `<template name="a"><view class="_div"><view class="_p static {{[isActive ? 'active' : '', hasError ? 'text-danger' : '']}}">233</view></view></template>`,
+      { name: 'a' }
+    )
+    assertCodegen(
+      `<div><p class="static" v-bind:class="computedClassStr">233</p></div>`,
+      `<template name="a"><view class="_div"><view class="_p static {{computedClassStr}}">233</view></view></template>`,
+      { name: 'a' }
+    )
+    // TODO, classObject 暂不支持
+    // assertCodegen(
+    //   `<div><p class="static" v-bind:class="classObject">233</p></div>`,
+    //   `<template name="a"><view class="_div static {{( isActive)? 'active' : ' '}} {{( hasError )? 'text-danger' : ' '}}"></view></template>`,
+    //   { name: 'a' }
+    // )
+    // array
+    assertCodegen(
+      `<div><p class="static" :class="[activeClass, errorClass]">233</p></div>`,
+      `<template name="a"><view class="_div"><view class="_p static {{[activeClass, errorClass]}}">233</view></view></template>`,
+      { name: 'a' }
+    )
+    assertCodegen(
+      `<div><p class="static" v-bind:class="[isActive ? activeClass : '', errorClass]">233</p></div>`,
+      `<template name="a"><view class="_div"><view class="_p static {{[isActive ? activeClass : '', errorClass]}}">233</view></view></template>`,
+      { name: 'a' }
+    )
+    assertCodegen(
+      `<div><p class="static" v-bind:class="[{ active: isActive }, errorClass]">233</p></div>`,
+      `<template name="a"><view class="_div"><view class="_p static {{[[isActive ? 'active' : ''], errorClass]}}">233</view></view></template>`,
+      { name: 'a' }
+    )
+  })
+
+  it('v-bind:style', () => {
+    assertCodegen(
+      `<div v-bind:style="{ color: activeColor, fontSize: fontSize + 'px' }">111</div>`,
+      `<template name="a"><view class="_div" style=" {{('color:' + activeColor + ';' + 'font-size:' + fontSize + 'px' + ';')}}">111</view></template>`,
+      { name: 'a' }
+    )
+    assertCodegen(
+      `<div v-bind:style="[{ color: activeColor, fontSize: fontSize + 'px' }]">111</div>`,
+      `<template name="a"><view class="_div" style=" {{['color:' + activeColor + ';' + 'font-size:' + fontSize + 'px' + ';']}}">111</view></template>`,
+      { name: 'a' }
+    )
+    assertCodegen(
+      `<div v-bind:style="computedStyleStr">222</div>`,
+      `<template name="a"><view class="_div" style=" {{computedStyleStr}}">222</view></template>`,
+      { name: 'a' }
+    )
+    // TODO, 等微信支持了再支持
+    // assertCodegen(
+    //   `<div v-bind:style="styleObject">222</div>`,
+    //   `<template name="a"><view class="_div" style=" {{tyleObjec}}">222</view></template>`,
+    //   { name: 'a' }
+    // )
+    // assertCodegen(
+    //   `<div v-bind:style="[baseStyles, overridingStyles]">333</div>`,
+    //   `<template name="a"><view class="_div" style=" {{baseStyles, overridingStyles}}">333</view></template>`,
+    //   { name: 'a' }
+    // )
+    // assertCodegen(
+    //   `<div :style="{ display: ['-webkit-box', '-ms-flexbox', 'flex'] }">444</div>`,
+    //   `<template name="a"><view class="_div" style=" {{'display:' + ['-webkit-box', '-ms-flexbox', 'flex'] + ';'}}">444</view></template>`,
+    //   { name: 'a' }
+    // )
+    assertCodegen(
+      `<my-component style="color: red;"></my-component>`,
+      `<import src="/components/card" /><template name="a"><template data="{{...$root[$kk+'0'], $root}}" is="my-component"></template></template>`,
+      {
+        name: 'a',
+        components: {
+          'my-component': {
+            name: 'my-component',
+            src: '/components/card'
+          }
+        },
+        moduleId: 'hashValue'
+      },
+      {
+        mpTips: ['template 不支持此属性-> style="color: red;"'],
         mpErrors: []
       }
     )
@@ -232,6 +324,13 @@ describe('事件', () => {
       { name: 'a' }
     )
   })
+  it('v-else', () => {
+    assertCodegen(
+      `<div><div v-if="type === 'A'" @click="logger('A')">A</div><div v-else-if="type === 'B'" @click="logger('B')">B</div><div v-else-if="type === 'C'" @click="logger('C')">C</div><div v-else @click="logger('Not A/B/C')">Not A/B/C</div></div>`,
+      `<template name="a"><view class="_div"><view wx:if="{{type === 'A'}}" bindtap="handleProxy" data-eventid="{{'4'}}" data-comkey="{{$k}}" class="_div">A</view><view wx:elif="{{type === 'B'}}" bindtap="handleProxy" data-eventid="{{'1'}}" data-comkey="{{$k}}" class="_div">B</view><view wx:elif="{{type === 'C'}}" bindtap="handleProxy" data-eventid="{{'2'}}" data-comkey="{{$k}}" class="_div">C</view><view wx:else bindtap="handleProxy" data-eventid="{{'3'}}" data-comkey="{{$k}}" class="_div">Not A/B/C</view></view></template>`,
+      { name: 'a' }
+    )
+  })
 })
 
 describe('表单', () => {
@@ -290,13 +389,13 @@ describe('表单', () => {
 describe('template', () => {
   it('template', () => {
     assertCodegen(
-      `<div><Card v-for="i in 10"></Card></div>`,
-      `<import src="/components/card" /><template name="a"><view class="_div data-v-djskdksdksdjkksdks"><template data="{{...$root[$kk+'0-'+index], $root}}" is="Card" wx:for="{{10}}" wx:for-index="index" wx:for-item="i"></template></view></template>`,
+      `<div><card v-for="i in 10"></card></div>`,
+      `<import src="/components/card" /><template name="a"><view class="_div data-v-djskdksdksdjkksdks"><template data="{{...$root[$kk+'0-'+index], $root}}" is="card" wx:for="{{10}}" wx:for-index="index" wx:for-item="i"></template></view></template>`,
       {
         name: 'a',
         components: {
-          Card: {
-            name: 'Card',
+          card: {
+            name: 'card',
             src: '/components/card'
           }
         },
@@ -307,13 +406,13 @@ describe('template', () => {
 
   it('template', () => {
     assertCodegen(
-      `<div><Card :message="1"></Card></div>`,
-      `<import src="/components/card" /><template name="a"><view class="_div data-v-djskdksdksdjkksdks"><template data="{{...$root[$kk+'0'], $root}}" is="Card"></template></view></template>`,
+      `<div><card :message="1"></card></div>`,
+      `<import src="/components/card" /><template name="a"><view class="_div data-v-djskdksdksdjkksdks"><template data="{{...$root[$kk+'0'], $root}}" is="card"></template></view></template>`,
       {
         name: 'a',
         components: {
-          Card: {
-            name: 'Card',
+          card: {
+            name: 'card',
             src: '/components/card'
           }
         },
@@ -323,13 +422,13 @@ describe('template', () => {
   })
   it('template', () => {
     assertCodegen(
-      `<div><Card :message="1"></Card> <block><span>test</span></block></div>`,
-      `<import src="/components/card" /><template name="a"><view class="_div data-v-djskdksdksdjkksdks"><template data="{{...$root[$kk+'0'], $root}}" is="Card"></template> <block><label class="_span data-v-djskdksdksdjkksdks">test</label></block></view></template>`,
+      `<div><card :message="1"></card> <block><span>test</span></block></div>`,
+      `<import src="/components/card" /><template name="a"><view class="_div data-v-djskdksdksdjkksdks"><template data="{{...$root[$kk+'0'], $root}}" is="card"></template> <block><label class="_span data-v-djskdksdksdjkksdks">test</label></block></view></template>`,
       {
         name: 'a',
         components: {
-          Card: {
-            name: 'Card',
+          card: {
+            name: 'card',
             src: '/components/card'
           }
         },
@@ -450,6 +549,35 @@ describe('web-view', () => {
       `<web-view src="https://i.meituan.com"> </web-view>`,
       `<template name="a"><web-view src="https://i.meituan.com" class="_web-view"></web-view></template>`,
       { name: 'a' }
+    );
+  })
+})
+
+describe('组件', () => {
+  it('组件驼峰命名', () => {
+    assertCodegen(
+      `<div><aCard></aCard></div>`,
+      `<import src="card$3d556b2c" /><template name="index$c044a66a"><view class="_div data-v-5eca2e54"><template data="{{...$root[$kk+'0'], $root}}" is="card$3d556b2c"></template></view></template>`,
+      { components:
+        { 'a-card': { src: 'card$3d556b2c', name: 'card$3d556b2c' },
+          isCompleted: true,
+          slots: { src: 'slots', name: 'slots' } },
+       pageType: 'component',
+       name: 'index$c044a66a',
+       moduleId: 'data-v-5eca2e54' }
+    );
+  })
+  it('组件驼峰命名', () => {
+    assertCodegen(
+      `<div><Card></Card></div>`,
+      `<import src="card$3d556b2c" /><template name="index$c044a66a"><view class="_div data-v-5eca2e54"><template data="{{...$root[$kk+'0'], $root}}" is="card$3d556b2c"></template></view></template>`,
+      { components:
+        { 'card': { src: 'card$3d556b2c', name: 'card$3d556b2c' },
+          isCompleted: true,
+          slots: { src: 'slots', name: 'slots' } },
+       pageType: 'component',
+       name: 'index$c044a66a',
+       moduleId: 'data-v-5eca2e54' }
     );
   })
 })

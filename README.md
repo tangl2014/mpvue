@@ -1,9 +1,15 @@
-# mpvue
-> Vue.js in mini program
+# mpvue 
+> Vue.js 小程序版, fork 自 [vuejs/vue@2.4.1](https://github.com/vuejs/vue)，保留了 vue runtime 能力，添加了小程序平台的支持。
+
+![npm version](https://img.shields.io/npm/v/mpvue.svg?style=flat)
 
 <img src="http://mpvue.com/assets/logo.png" width="80">
 
-`mpvue` 是一个使用 [Vue.js](https://vuejs.org) 开发小程序的前端框架。框架基于 `Vue.js` 核心，`mpvue` 修改了 `Vue.js` 的 [runtime](http://mpvue.com/mpvue) 和 [compiler](http://mpvue.com/mpvue-template-compiler) 实现，使其可以运行在小程序环境中，从而为小程序开发引入了整套 `Vue.js` 开发体验。
+`mpvue` 是一个使用 [Vue.js](https://vuejs.org) 开发小程序的前端框架。框架基于 `Vue.js` 核心，`mpvue` 修改了 `Vue.js` 的 runtime 和 compiler 实现，使其可以运行在小程序环境中，从而为小程序开发引入了整套 `Vue.js` 开发体验。
+
+## 文档
+
+[mpvue 文档](http://mpvue.com)
 
 ## 实践案例
 
@@ -20,7 +26,7 @@
 ## 主要特性
 使用 `mpvue` 开发小程序，你将在小程序技术体系的基础上获取到这样一些能力：
 
-- 彻底的组件化开发能力：提高代码
+- 彻底的组件化开发能力：提高代码复用性
 - 完整的 `Vue.js` 开发体验
 - 方便的 `Vuex` 数据管理方案：方便构建复杂应用
 - 快捷的 `webpack` 构建机制：自定义构建策略、开发阶段 hotReload
@@ -51,4 +57,8 @@
 - [mpvue-simple](http://mpvue.com/mpvue/simple) 辅助 mpvue 快速开发 Page / Component 级小程序页面的工具
 - 其它
 
+[贡献方法](./.github/CONTRIBUTING.md)
 
+[使用 mpvue 的项目征集](https://github.com/Meituan-Dianping/mpvue/issues/21)
+
+[分享交流群](https://github.com/Meituan-Dianping/mpvue/issues/14)
